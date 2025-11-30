@@ -20,7 +20,7 @@ app.use(
 app.use("/api/auth", userRoute);
 app.use("/api/users", roleRouter);
 
-const port = process.env.PORT || 5001;
+const port = process.env.PORT || 4000;
 console.log("BACKEND STARTED");
 app.get("/", (req, res) => {
   console.log("REQUEST RECEIVED");
