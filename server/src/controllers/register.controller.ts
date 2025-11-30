@@ -14,7 +14,9 @@ export const registerController = async (req: Request, res: Response) => {
   const hashPassword = await HashPassword(password);
 
   const user = await User.create({ email, password: hashPassword, role });
-
-  res.status(201).json({ message: "User created successfully", user });
+  return res.status(201).json({
+    success: true,
+    message: "User created successfully",
+    user,
+  });
 };
-
