@@ -4,13 +4,17 @@ import { ComparePassword } from "../lib/exist.password";
 import jwt from "jsonwebtoken";
 export const login = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { name, email, password } = req.body;
 
     const user = await existingEmail(email);
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-    const passwordIsCorrect = await ComparePassword(password, user.password);
+    const passwordIsCorrect = await ComparePassword(
+      password,
+
+      user.password
+    );
     if (!passwordIsCorrect) {
       return res.status(401).json({ message: "password is correct" });
     }

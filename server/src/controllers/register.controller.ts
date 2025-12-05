@@ -4,7 +4,7 @@ import { existingEmail } from "../lib/exist.email";
 import { HashPassword } from "../lib/exist.password";
 
 export const registerController = async (req: Request, res: Response) => {
-  const { email, password, role } = req.body;
+  const { name, email, password, role } = req.body;
 
   const existingUser = await existingEmail(email);
 
@@ -13,7 +13,7 @@ export const registerController = async (req: Request, res: Response) => {
   }
   const hashPassword = await HashPassword(password);
 
-  const user = await User.create({ email, password: hashPassword, role });
+  const user = await User.create({ name, email, password: hashPassword, role });
   return res.status(201).json({
     success: true,
     message: "User created successfully",
