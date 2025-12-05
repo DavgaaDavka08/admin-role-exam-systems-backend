@@ -13,12 +13,8 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "https://admin-role-front-end.vercel.app",
-    ],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    origin: "http://localhost:3000", // FRONTEND URL
+    credentials: true, // allow cookies / tokens
   })
 );
 
