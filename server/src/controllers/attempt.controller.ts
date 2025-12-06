@@ -114,21 +114,26 @@ export const getAttemptById = async (req: Request, res: Response) => {
   }
 };
 
-// 🔥 ШИНЭ – analytics: тухайн examId-гаар бүх attempts авах
 export const getAttemptsByExam = async (req: Request, res: Response) => {
-  try {
-    const { examId } = req.params;
+  const { examId } = req.params;
 
-    const attempts = await Attempt.find({
-      examId,
-      isSubmitted: true,
-    })
+  const attempts = await Attempt.find({
+    examId,
+    isSubmitted: true,
+  })
+    .populate("studentId", "name grade")
+    .sort({ createdAt: -1 });
+
+  res.json(attempts);
+};
+export const getAllAttempts = async (req: Request, res: Response) => {
+  try {
+    const attempts = await Attempt.find()
       .populate("studentId", "name grade")
-      .sort({ createdAt: -1 });
+      .populate("examId", "title");
 
     res.json(attempts);
-  } catch (error) {
-    console.error("ANALYTICS ERROR:", error);
-    res.status(500).json({ message: "Failed to fetch attempts", error });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch attempts", err });
   }
 };

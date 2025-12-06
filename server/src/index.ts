@@ -6,6 +6,7 @@ import userRoute from "./routers/user.router";
 import roleRouter from "./routers/role.router";
 import examRouter from "./routers/exam.router";
 import attemptRouter from "./routers/attempt.router";
+import usersRouter from "./routers/user.toutes";
 dotenv.config();
 connectDb();
 
@@ -20,11 +21,11 @@ app.use(
 );
 
 app.use("/api/auth", userRoute);
-app.use("/api/users", roleRouter);
-
+app.use("/api/users", usersRouter);
+app.use("/api/roles", roleRouter);
 app.use("/api/exams", examRouter);
-
 app.use("/api/attempts", attemptRouter);
+
 const port = process.env.PORT || 4000;
 
 console.log("BACKEND STARTED");

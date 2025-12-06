@@ -6,6 +6,7 @@ import {
   submitAttempt,
   getAttemptById,
   getAttemptsByExam,
+  getAllAttempts,
 } from "../controllers/attempt.controller";
 
 const router = Router();
@@ -13,12 +14,8 @@ const router = Router();
 router.post("/start", startAttempt);
 router.post("/answer", saveAnswer);
 router.post("/submit", submitAttempt);
-
-// ✔ Нэг attempt-ийг id-аар авах
 router.get("/single/:id", getAttemptById);
-
-// ✔ Нэг шалгалтын бүх attempts (analytics)
-
 router.get("/exam/:examId", getAttemptsByExam);
 
+router.get("/", getAllAttempts);
 export default router;
