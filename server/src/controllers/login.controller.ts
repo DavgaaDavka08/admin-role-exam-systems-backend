@@ -4,7 +4,7 @@ import { ComparePassword } from "../lib/exist.password";
 import jwt from "jsonwebtoken";
 export const login = async (req: Request, res: Response) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, grade } = req.body;
     const user = await existingEmail(email);
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
@@ -21,7 +21,7 @@ export const login = async (req: Request, res: Response) => {
     //createToken
     // token done
     const token = jwt.sign(
-      { id: user._id, role: user.role, name: user.name },
+      { id: user._id, role: user.role, name: user.name, grade: user.grade },
       process.env.TOKEN_SECRET!,
       { expiresIn: "1h" }
     );
