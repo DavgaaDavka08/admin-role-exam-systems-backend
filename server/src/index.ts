@@ -18,6 +18,8 @@ app.use(
     origin: [
       "http://localhost:3000",
       "https://admin-role-exam-system-front-end.vercel.app",
+      "https://tsonjinexam.site",
+      "https://www.tsonjinexam.site",
     ],
     credentials: true,
   })
