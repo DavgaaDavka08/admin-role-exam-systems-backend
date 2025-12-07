@@ -27,8 +27,7 @@ app.use(
   })
 );
 
-// OPTIONAL (Express 5 дээр OK)
-app.options("*", cors());
+
 
 app.use("/api/auth", userRoute);
 app.use("/api/users", usersRouter);
