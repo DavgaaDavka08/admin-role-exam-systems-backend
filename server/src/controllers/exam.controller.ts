@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { Exam } from "../models/exam.models";
+import { Attempt } from "../models/attempt.model";
 export const createExam=async(req:Request, res:Response)=>{
     try {
         const exam=await Exam.create(req.body)
@@ -9,14 +10,32 @@ export const createExam=async(req:Request, res:Response)=>{
         res.status(404).json({massge:"error create exam ",error})
     }
 }
-export const getExams = async (_req: Request, res: Response) => {
-    try {
-      const exams = await Exam.find().sort({ createdAt: -1 });
-      res.json(exams);
-    } catch (err) {
-      res.status(500).json({ message: "Failed to fetch exams" });
+export const getExams = async (req: Request, res: Response) => {
+  try {
+    const studentId = req.query.studentId;
+
+    const exams = await Exam.find().lean();
+
+    let attempts = [];
+    if (studentId) {
+      attempts = await Attempt.find({
+        studentId,
+        isSubmitted: true,
+      });
     }
-  };
+
+    const submittedExamIds = new Set(attempts.map(a => a.examId.toString()));
+
+    const result = exams.map(exam => ({
+      ...exam,
+      hasAttempt: submittedExamIds.has(exam._id.toString()),
+    }));
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch exams" });
+  }
+};
   export const getExamById = async (req: Request, res: Response) => {
     try {
       const exam = await Exam.findById(req.params.id);

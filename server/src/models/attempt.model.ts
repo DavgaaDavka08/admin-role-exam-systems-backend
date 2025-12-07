@@ -1,27 +1,18 @@
-// models/attempt.model.ts
 import mongoose from "mongoose";
 
 const answerSchema = new mongoose.Schema({
-  questionId: String, // question.id
-  selectedOption: String, // "A" | "B" | "C" | "D"
+  questionId: String,
+  selectedOption: String,
 });
 
 const attemptSchema = new mongoose.Schema(
   {
-    studentId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    examId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Exam",
-      required: true,
-    },
+    studentId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    examId: { type: mongoose.Schema.Types.ObjectId, ref: "Exam", required: true },
     answers: [answerSchema],
     score: { type: Number, default: 0 },
     totalQuestions: { type: Number, default: 0 },
-    finishedAt: { type: Date },
+    finishedAt: Date,
     isSubmitted: { type: Boolean, default: false },
   },
   { timestamps: true }

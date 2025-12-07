@@ -3,38 +3,64 @@ import { Request, Response } from "express";
 import { Attempt } from "../models/attempt.model";
 import { Exam } from "../models/exam.models";
 
+/**
+ * 1) Шалгалтыг эхлүүлэх
+ *   - Хэрвээ өмнө нь SUBMITTED == true → буцаана (нэг удаа өгөх эрхтэй)
+ *   - Хэрвээ дуусаагүй attempt байгаа → үргэлжлүүлнэ
+ *   - Шинэ үүсгэнэ
+ */
 export const startAttempt = async (req: Request, res: Response) => {
   try {
     const { studentId, examId } = req.body;
 
-    // тухайн шалгалт дээр өмнө нь дуусаагүй attempt байгаа эсэх
+    // 🔒 1. Хэрвээ өмнө нь бүрэн өгсөн бол → нэвтрүүлэхгүй
+    const finished = await Attempt.findOne({
+      studentId,
+      examId,
+      isSubmitted: true,
+    });
+
+    if (finished) {
+      return res.status(400).json({
+        message: "Та энэ шалгалтыг аль хэдийн нэг удаа өгсөн байна!",
+        attemptId: finished._id,
+      });
+    }
+
+    // 🔄 2. Өмнө нь эхлүүлсэн ч дуусаагүй attempt байгаа бол → шууд үргэлжлүүлнэ
     let attempt = await Attempt.findOne({
       studentId,
       examId,
       isSubmitted: false,
     });
 
-    if (!attempt) {
-      const exam = await Exam.findById(examId);
-      if (!exam) {
-        return res.status(404).json({ message: "Exam not found" });
-      }
-
-      attempt = await Attempt.create({
-        studentId,
-        examId,
-        answers: [],
-        totalQuestions: exam.questions.length,
-      });
+    if (attempt) {
+      return res.json(attempt);
     }
 
-    res.json(attempt);
+    // 🆕 3. Шинэ attempt үүсгэнэ
+    const exam = await Exam.findById(examId);
+    if (!exam) return res.status(404).json({ message: "Exam not found" });
+
+    attempt = await Attempt.create({
+      studentId,
+      examId,
+      answers: [],
+      totalQuestions: exam.questions.length,
+      isSubmitted: false,
+    });
+
+    return res.json(attempt);
   } catch (error) {
-    console.error(error);
+    console.error("Start attempt error:", error);
     res.status(500).json({ message: "Failed to start attempt" });
   }
 };
 
+
+/**
+ * 2) Хариулт хадгалах
+ */
 export const saveAnswer = async (req: Request, res: Response) => {
   try {
     const { attemptId, questionId, selectedOption } = req.body;
@@ -44,9 +70,13 @@ export const saveAnswer = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Attempt not found" });
     }
 
-    const existing = attempt.answers.find(
-      (ans) => ans.questionId === questionId
-    );
+    if (attempt.isSubmitted) {
+      return res
+        .status(400)
+        .json({ message: "Already submitted. Cannot change answers." });
+    }
+
+    const existing = attempt.answers.find((a) => a.questionId === questionId);
 
     if (existing) {
       existing.selectedOption = selectedOption;
@@ -57,24 +87,30 @@ export const saveAnswer = async (req: Request, res: Response) => {
     await attempt.save();
     res.json(attempt);
   } catch (error) {
-    console.error(error);
+    console.error("Save answer error:", error);
     res.status(500).json({ message: "Failed to save answer" });
   }
 };
 
+
+/**
+ * 3) Шалгалт дуусгах (нэг удаа submit хийнэ)
+ */
 export const submitAttempt = async (req: Request, res: Response) => {
   try {
     const { attemptId } = req.body;
 
     const attempt = await Attempt.findById(attemptId);
-    if (!attempt) {
-      return res.status(404).json({ message: "Attempt not found" });
+    if (!attempt) return res.status(404).json({ message: "Attempt not found" });
+
+    if (attempt.isSubmitted) {
+      return res.status(400).json({
+        message: "Шалгалт аль хэдийн дууссан байна! Дахин илгээх боломжгүй.",
+      });
     }
 
     const exam = await Exam.findById(attempt.examId);
-    if (!exam) {
-      return res.status(404).json({ message: "Exam not found" });
-    }
+    if (!exam) return res.status(404).json({ message: "Exam not found" });
 
     let score = 0;
 
@@ -90,13 +126,21 @@ export const submitAttempt = async (req: Request, res: Response) => {
 
     await attempt.save();
 
-    res.json({ score, total: exam.questions.length });
+    return res.json({
+      message: "Шалгалт амжилттай илгээгдлээ",
+      score,
+      total: exam.questions.length,
+    });
   } catch (error) {
-    console.error(error);
+    console.error("Submit error:", error);
     res.status(500).json({ message: "Failed to submit attempt" });
   }
 };
 
+
+/**
+ * 4) Attempt by ID
+ */
 export const getAttemptById = async (req: Request, res: Response) => {
   try {
     const attempt = await Attempt.findById(req.params.id).populate(
@@ -104,29 +148,38 @@ export const getAttemptById = async (req: Request, res: Response) => {
       "name grade"
     );
 
-    if (!attempt) {
-      return res.status(404).json({ message: "Attempt not found" });
-    }
+    if (!attempt) return res.status(404).json({ message: "Attempt not found" });
 
-    res.json(attempt);
+    return res.json(attempt);
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
 };
 
+
+/**
+ * 5) Get attempts for 1 exam (admin analytics)
+ */
 export const getAttemptsByExam = async (req: Request, res: Response) => {
-  const { examId } = req.params;
+  try {
+    const attempts = await Attempt.find({
+      examId: req.params.examId,
+      isSubmitted: true,
+    })
+      .populate("studentId", "name grade")
+      .sort({ createdAt: -1 });
 
-  const attempts = await Attempt.find({
-    examId,
-    isSubmitted: true,
-  })
-    .populate("studentId", "name grade")
-    .sort({ createdAt: -1 });
-
-  res.json(attempts);
+    res.json(attempts);
+  } catch {
+    res.status(500).json({ message: "Failed to fetch attempts" });
+  }
 };
-export const getAllAttempts = async (req: Request, res: Response) => {
+
+
+/**
+ * 6) Admin all attempts
+ */
+export const getAllAttempts = async (_req: Request, res: Response) => {
   try {
     const attempts = await Attempt.find()
       .populate("studentId", "name grade")
