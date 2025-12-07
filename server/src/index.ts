@@ -15,8 +15,8 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: "http://localhost:3000", // FRONTEND URL
-    credentials: true, // allow cookies / tokens
+    origin: ["http://localhost:3000", "https://your-vercel-url.vercel.app"],
+    credentials: true,
   })
 );
 
