@@ -2,11 +2,13 @@ import express from "express";
 import dotenv from "dotenv";
 import { connectDb } from "./config/connect.db";
 import cors from "cors";
+
 import userRoute from "./routers/user.router";
 import roleRouter from "./routers/role.router";
 import examRouter from "./routers/exam.router";
 import attemptRouter from "./routers/attempt.router";
 import usersRouter from "./routers/user.toutes";
+
 dotenv.config();
 connectDb();
 
@@ -24,7 +26,10 @@ app.use(
     credentials: true,
   })
 );
+
+// OPTIONAL (Express 5 дээр OK)
 app.options("*", cors());
+
 app.use("/api/auth", userRoute);
 app.use("/api/users", usersRouter);
 app.use("/api/roles", roleRouter);
