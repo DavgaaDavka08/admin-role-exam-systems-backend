@@ -15,10 +15,14 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: ["http://localhost:3000", "https://your-vercel-url.vercel.app"],
+    origin: [
+      "http://localhost:3000",
+      "https://YOUR-VERCEL-DOMAIN.vercel.app"
+    ],
     credentials: true,
   })
 );
+
 
 app.use("/api/auth", userRoute);
 app.use("/api/users", usersRouter);
