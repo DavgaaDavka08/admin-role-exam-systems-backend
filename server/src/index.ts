@@ -17,12 +17,11 @@ app.use(
   cors({
     origin: [
       "http://localhost:3000",
-      "https://YOUR-VERCEL-DOMAIN.vercel.app"
+      "https://admin-role-exam-system-front-end.vercel.app",
     ],
     credentials: true,
   })
 );
-
 
 app.use("/api/auth", userRoute);
 app.use("/api/users", usersRouter);
