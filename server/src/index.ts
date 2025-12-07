@@ -24,7 +24,7 @@ app.use(
     credentials: true,
   })
 );
-
+app.options("*", cors());
 app.use("/api/auth", userRoute);
 app.use("/api/users", usersRouter);
 app.use("/api/roles", roleRouter);
