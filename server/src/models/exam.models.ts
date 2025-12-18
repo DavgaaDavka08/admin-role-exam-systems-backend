@@ -2,15 +2,15 @@
 import mongoose from "mongoose";
 
 const optionSchema = new mongoose.Schema({
-  id: String, // "A" | "B" | "C" | "D"
+  id: String,
   text: String,
 });
 
 const questionSchema = new mongoose.Schema({
-  id: String, // uuid/string
+  id: String,
   question: String,
   options: [optionSchema],
-  correctAnswer: String, // "A" | "B" | "C" | "D"
+  correctAnswer: String,
 });
 
 const examSchema = new mongoose.Schema(
@@ -18,7 +18,7 @@ const examSchema = new mongoose.Schema(
     title: { type: String, required: true },
 
     description: String,
-    duration: Number, // минут
+    duration: Number,
     questions: [questionSchema],
   },
   { timestamps: true }

@@ -1,4 +1,3 @@
-// routers/attempt.router.ts
 import { Router } from "express";
 import {
   startAttempt,

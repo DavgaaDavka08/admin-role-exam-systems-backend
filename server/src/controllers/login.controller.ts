@@ -18,8 +18,6 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "password is correct" });
     }
 
-    //createToken
-    // token done
     const token = jwt.sign(
       { id: user._id, role: user.role, name: user.name, grade: user.grade },
       process.env.TOKEN_SECRET!,
