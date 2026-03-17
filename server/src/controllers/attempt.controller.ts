@@ -94,15 +94,20 @@ export const submitAttempt = async (req: Request, res: Response) => {
     const exam = await Exam.findById(attempt.examId);
     if (!exam) return res.status(404).json({ message: "Exam not found" });
 
-    let score = 0;
+    const total = exam.questions.length;
+    let correctCount = 0;
 
     exam.questions.forEach((q) => {
       const ans = attempt.answers.find((a) => a.questionId === q.id);
-      if (ans && ans.selectedOption === q.correctAnswer) score++;
+      if (ans && ans.selectedOption === q.correctAnswer) correctCount++;
     });
 
+    const score = correctCount; // score = зөв хариулсан асуултын тоо
+    const wrongCount = total - correctCount;
+    const percentage = total === 0 ? 0 : Math.round((correctCount / total) * 100);
+
     attempt.score = score;
-    attempt.totalQuestions = exam.questions.length;
+    attempt.totalQuestions = total;
     attempt.isSubmitted = true;
     attempt.finishedAt = new Date();
 
@@ -111,7 +116,10 @@ export const submitAttempt = async (req: Request, res: Response) => {
     return res.json({
       message: "Шалгалт амжилттай илгээгдлээ",
       score,
-      total: exam.questions.length,
+      total,
+      correctCount,
+      wrongCount,
+      percentage,
     });
   } catch (error) {
     console.error("Submit error:", error);
@@ -134,25 +142,38 @@ export const getAttemptById = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Exam not found" });
     }
 
-    const answersWithResult = attempt.answers.map((a, index) => {
-      // 🔥 ЗӨВ MATCH: question.id (string)
-      const question = exam.questions.find((q: any) => q.id === a.questionId);
+    const total = exam.questions.length;
 
-      const correctAnswer = question?.correctAnswer;
+    // exam-ийн бүх асуултаар iter хийж (unanswered-ыг ч) үр дүн гаргана
+    const answersWithResult = exam.questions.map((q: any, idx: number) => {
+      const ans = attempt.answers.find((a) => a.questionId === q.id);
+      const selectedOption = ans?.selectedOption;
+      const correctOption = q.correctAnswer;
+      const isCorrect =
+        selectedOption !== undefined && selectedOption === correctOption;
 
       return {
-        questionId: a.questionId,
-        questionIndex: index + 1,
-        selectedOption: a.selectedOption,
-        correctOption: correctAnswer,
-        isCorrect:
-          correctAnswer !== undefined && a.selectedOption === correctAnswer,
+        questionId: q.id,
+        questionIndex: idx + 1,
+        selectedOption,
+        correctOption,
+        isCorrect,
       };
     });
+
+    const correctCount = answersWithResult.filter((a) => a.isCorrect).length;
+    const wrongCount = total - correctCount;
+    const score = correctCount; // score = зөв хариулсан асуултын тоо
+    const percentage = total === 0 ? 0 : Math.round((correctCount / total) * 100);
 
     res.json({
       ...attempt.toObject(),
       answers: answersWithResult,
+      total,
+      score,
+      correctCount,
+      wrongCount,
+      percentage,
     });
   } catch (error) {
     console.error("Get attempt error:", error);

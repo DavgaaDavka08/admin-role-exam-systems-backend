@@ -8,6 +8,8 @@ import roleRouter from "./routers/role.router";
 import examRouter from "./routers/exam.router";
 import attemptRouter from "./routers/attempt.router";
 import usersRouter from "./routers/user.toutes";
+import studentRouter from "./routers/student.router";
+import adminRouter from "./routers/admin.router";
 
 dotenv.config();
 connectDb();
@@ -34,6 +36,16 @@ app.use("/api/users", usersRouter);
 app.use("/api/roles", roleRouter);
 app.use("/api/exams", examRouter);
 app.use("/api/attempts", attemptRouter);
+app.use("/api/students", studentRouter);
+app.use("/api/admin", adminRouter);
+
+// simple health endpoints (useful for deploy verification)
+app.get("/api", (_req, res) => {
+  res.json({ ok: true, service: "admin-role-exam-systems-backend" });
+});
+app.get("/api/health", (_req, res) => {
+  res.json({ ok: true });
+});
 
 const port = process.env.PORT || 4000;
 
