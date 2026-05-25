@@ -20,7 +20,15 @@ const app = express();
 app.use(express.json({ limit: "10mb" }));
 
 // serve locally stored uploads (fallback when Cloudinary is not configured)
-app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
+app.use(
+  "/uploads",
+  (_req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    next();
+  },
+  express.static(path.resolve(process.cwd(), "uploads"))
+);
 
 app.use(
   cors({

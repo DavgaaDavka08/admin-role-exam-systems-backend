@@ -27,6 +27,23 @@ export const uploadFile = async (req: Request, res: Response) => {
 
     const stored =
       kind === "archive" ? await storeArchive(file) : await storeImage(file);
+
+    // Local-storage fallback returns a relative URL like "/uploads/abc.png".
+    // The frontend lives on a different origin, so rewrite to an absolute URL
+    // using the request host (or PUBLIC_UPLOAD_BASE if it's a full URL).
+    if (stored.url && stored.url.startsWith("/")) {
+      const explicitBase = process.env.PUBLIC_UPLOAD_BASE;
+      if (explicitBase && /^https?:\/\//i.test(explicitBase)) {
+        stored.url = explicitBase.replace(/\/$/, "") + stored.url.replace(/^\/uploads/, "");
+      } else {
+        const proto =
+          (req.headers["x-forwarded-proto"] as string)?.split(",")[0] ||
+          req.protocol;
+        const host = req.get("host");
+        stored.url = `${proto}://${host}${stored.url}`;
+      }
+    }
+
     res.json(stored);
   } catch (e: any) {
     console.error("upload error", e);
