@@ -2,6 +2,32 @@ import { Request, Response } from "express";
 import { Attempt } from "../models/attempt.model";
 import { Exam } from "../models/exam.models";
 
+// Selected option is stored as a string. For multi-select questions the
+// frontend sends a CSV like "A,C". We split, normalize, and compare to the
+// question's correct answer set.
+function isCorrectAnswer(question: any, selected: string): boolean {
+  const correctList: string[] =
+    Array.isArray(question.correctAnswers) && question.correctAnswers.length
+      ? question.correctAnswers
+      : question.correctAnswer
+      ? [question.correctAnswer]
+      : [];
+  if (correctList.length === 0) return false;
+
+  if (question.type === "multiple") {
+    const selectedSet = new Set(
+      String(selected)
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    );
+    if (selectedSet.size !== correctList.length) return false;
+    return correctList.every((c: string) => selectedSet.has(c));
+  }
+
+  return selected === correctList[0];
+}
+
 export const startAttempt = async (req: Request, res: Response) => {
   try {
     const { studentId, examId } = req.body;
@@ -97,14 +123,18 @@ export const submitAttempt = async (req: Request, res: Response) => {
     const total = exam.questions.length;
     let correctCount = 0;
 
-    exam.questions.forEach((q) => {
+    exam.questions.forEach((q: any) => {
       const ans = attempt.answers.find((a) => a.questionId === q.id);
-      if (ans && ans.selectedOption === q.correctAnswer) correctCount++;
+      if (!ans?.selectedOption) return;
+      if (isCorrectAnswer(q, ans.selectedOption)) correctCount++;
     });
 
-    const score = correctCount; // score = зөв хариулсан асуултын тоо
+    const score = correctCount;
     const wrongCount = total - correctCount;
     const percentage = total === 0 ? 0 : Math.round((correctCount / total) * 100);
+    const theoryMaxScore = exam.theoryMaxScore || 100;
+    const scaledScore =
+      total === 0 ? 0 : Math.round((correctCount / total) * theoryMaxScore);
 
     attempt.score = score;
     attempt.totalQuestions = total;
@@ -120,6 +150,8 @@ export const submitAttempt = async (req: Request, res: Response) => {
       correctCount,
       wrongCount,
       percentage,
+      scaledScore,
+      theoryMaxScore,
     });
   } catch (error) {
     console.error("Submit error:", error);
@@ -144,19 +176,26 @@ export const getAttemptById = async (req: Request, res: Response) => {
 
     const total = exam.questions.length;
 
-    // exam-ийн бүх асуултаар iter хийж (unanswered-ыг ч) үр дүн гаргана
     const answersWithResult = exam.questions.map((q: any, idx: number) => {
       const ans = attempt.answers.find((a) => a.questionId === q.id);
       const selectedOption = ans?.selectedOption;
       const correctOption = q.correctAnswer;
+      const correctOptions =
+        q.correctAnswers && q.correctAnswers.length
+          ? q.correctAnswers
+          : q.correctAnswer
+          ? [q.correctAnswer]
+          : [];
       const isCorrect =
-        selectedOption !== undefined && selectedOption === correctOption;
+        selectedOption !== undefined && isCorrectAnswer(q, selectedOption);
 
       return {
         questionId: q.id,
         questionIndex: idx + 1,
+        questionType: q.type || "single",
         selectedOption,
         correctOption,
+        correctOptions,
         isCorrect,
       };
     });
